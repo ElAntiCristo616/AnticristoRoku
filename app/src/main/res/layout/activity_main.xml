@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Estructura copiada del control remoto de la app oficial de Roku
+     (barra superior, fila de iconos, atrás/inicio, D-pad en cruz,
+     rejilla de botones, hoja «Mi Roku»), con los colores navideños
+     de Anticristo Roku. Sin micrófono ni audífonos: esas funciones
+     son exclusivas de la app oficial. Sin botón de guía: ECP no
+     tiene tecla Guide. -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -21,25 +27,49 @@
                 android:layout_width="match_parent"
                 android:layout_height="48dp" />
 
-            <TextView
-                android:layout_width="wrap_content"
+            <!-- Barra superior: cerrar | nombre de la tele | apagar -->
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:text="Anticristo Roku"
-                android:textColor="@color/snow_white"
-                android:textSize="30sp"
-                android:textStyle="bold" />
+                android:gravity="center_vertical"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:text="Manda videos y controla tu Roku"
-                android:textColor="@color/sage"
-                android:textSize="15sp" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnCerrar"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:text="✕"
+                    android:textSize="20sp"
+                    app:backgroundTint="@color/pine_light"
+                    app:cornerRadius="24dp" />
+
+                <TextView
+                    android:id="@+id/tvNombreTele"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:text="● Sin tele"
+                    android:textColor="@color/snow_white"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnPower"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:text="⏻"
+                    android:textSize="20sp"
+                    app:backgroundTint="@color/red_accent"
+                    app:cornerRadius="24dp" />
+            </LinearLayout>
 
             <!-- Mi tele -->
             <LinearLayout
+                android:id="@+id/miTeleCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_margin="12dp"
@@ -64,23 +94,324 @@
                     android:textColor="@color/snow_white"
                     android:textSize="15sp" />
 
+                <LinearLayout
+                    android:id="@+id/searchControls"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnBuscar"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="Buscar teles"
+                        app:backgroundTint="@color/red_accent" />
+
+                    <LinearLayout
+                        android:id="@+id/devicesContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="O escribe la IP de tu tele"
+                        android:textColor="@color/sage"
+                        android:textSize="14sp" />
+
+                    <EditText
+                        android:id="@+id/etIpManual"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/card_bg"
+                        android:hint="192.168.1.5"
+                        android:inputType="text"
+                        android:padding="12dp"
+                        android:textColor="@color/snow_white"
+                        android:textColorHint="@color/sage" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnConectarIp"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="Conectar por IP"
+                        app:backgroundTint="@color/pine_light" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="La IP está en la tele: Ajustes → Red → Acerca de."
+                        android:textColor="@color/sage"
+                        android:textSize="13sp" />
+                </LinearLayout>
+
                 <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnBuscar"
+                    android:id="@+id/btnCambiarTele"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:text="Buscar teles"
-                    app:backgroundTint="@color/red_accent" />
-
-                <LinearLayout
-                    android:id="@+id/devicesContainer"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical" />
+                    android:text="Cambiar de tele"
+                    android:visibility="gone"
+                    app:backgroundTint="@color/pine_light" />
             </LinearLayout>
 
-            <!-- Mandar YouTube -->
+            <!-- Control remoto -->
             <LinearLayout
+                android:id="@+id/remoteSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <!-- Fila de iconos: buscar, teclado, ajustes -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:gravity="center_horizontal"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnBuscarTop"
+                        android:layout_width="56dp"
+                        android:layout_height="48dp"
+                        android:text="🔍"
+                        android:textSize="20sp"
+                        app:backgroundTint="@color/pine_light"
+                        app:cornerRadius="12dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnTecladoIcono"
+                        android:layout_width="56dp"
+                        android:layout_height="48dp"
+                        android:layout_marginStart="24dp"
+                        android:text="⌨"
+                        android:textSize="20sp"
+                        app:backgroundTint="@color/pine_light"
+                        app:cornerRadius="12dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnAjustesIcono"
+                        android:layout_width="56dp"
+                        android:layout_height="48dp"
+                        android:layout_marginStart="24dp"
+                        android:text="⚙"
+                        android:textSize="20sp"
+                        app:backgroundTint="@color/pine_light"
+                        app:cornerRadius="12dp" />
+                </LinearLayout>
+
+                <!-- Atrás | Inicio (sin guía: ECP no tiene tecla Guide) -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginEnd="12dp"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnBack"
+                        android:layout_width="0dp"
+                        android:layout_height="56dp"
+                        android:layout_weight="1"
+                        android:text="← Atrás"
+                        android:textSize="16sp"
+                        app:backgroundTint="@color/pine_light"
+                        app:cornerRadius="12dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnHome"
+                        android:layout_width="0dp"
+                        android:layout_height="56dp"
+                        android:layout_marginStart="12dp"
+                        android:layout_weight="1"
+                        android:text="⌂ Inicio"
+                        android:textSize="16sp"
+                        app:backgroundTint="@color/pine_light"
+                        app:cornerRadius="12dp" />
+                </LinearLayout>
+
+                <!-- D-pad en cruz con OK en el centro -->
+                <GridLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="20dp"
+                    android:columnCount="3"
+                    android:rowCount="3">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:layout_width="80dp"
+                        android:layout_height="72dp"
+                        android:enabled="false"
+                        android:visibility="invisible" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnUp"
+                        android:layout_width="80dp"
+                        android:layout_height="72dp"
+                        android:text="▲"
+                        android:textSize="22sp"
+                        app:backgroundTint="@color/pine_light"
+                        app:cornerRadius="12dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:layout_width="80dp"
+                        android:layout_height="72dp"
+                        android:enabled="false"
+                        android:visibility="invisible" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnLeft"
+                        android:layout_width="80dp"
+                        android:layout_height="72dp"
+                        android:text="◀"
+                        android:textSize="22sp"
+                        app:backgroundTint="@color/pine_light"
+                        app:cornerRadius="12dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnOk"
+                        android:layout_width="80dp"
+                        android:layout_height="72dp"
+                        android:text="OK"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        app:backgroundTint="@color/red_accent"
+                        app:cornerRadius="12dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnRight"
+                        android:layout_width="80dp"
+                        android:layout_height="72dp"
+                        android:text="▶"
+                        android:textSize="22sp"
+                        app:backgroundTint="@color/pine_light"
+                        app:cornerRadius="12dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:layout_width="80dp"
+                        android:layout_height="72dp"
+                        android:enabled="false"
+                        android:visibility="invisible" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnDown"
+                        android:layout_width="80dp"
+                        android:layout_height="72dp"
+                        android:text="▼"
+                        android:textSize="22sp"
+                        app:backgroundTint="@color/pine_light"
+                        app:cornerRadius="12dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:layout_width="80dp"
+                        android:layout_height="72dp"
+                        android:enabled="false"
+                        android:visibility="invisible" />
+                </GridLayout>
+
+                <!-- Rejilla: repetir, opciones, retroceder, play/pausa,
+                     adelantar, silencio, volumen −, volumen + -->
+                <GridLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="20dp"
+                    android:columnCount="3"
+                    android:rowCount="3">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnRepetir"
+                        android:layout_width="80dp"
+                        android:layout_height="64dp"
+                        android:text="↻"
+                        android:textSize="22sp"
+                        app:backgroundTint="@color/pine_light"
+                        app:cornerRadius="12dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnInfo"
+                        android:layout_width="80dp"
+                        android:layout_height="64dp"
+                        android:text="*"
+                        android:textSize="24sp"
+                        android:textStyle="bold"
+                        app:backgroundTint="@color/pine_light"
+                        app:cornerRadius="12dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:layout_width="80dp"
+                        android:layout_height="64dp"
+                        android:enabled="false"
+                        android:visibility="invisible" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnRev"
+                        android:layout_width="80dp"
+                        android:layout_height="64dp"
+                        android:text="◀◀"
+                        android:textSize="18sp"
+                        app:backgroundTint="@color/pine_light"
+                        app:cornerRadius="12dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnPlayPause"
+                        android:layout_width="80dp"
+                        android:layout_height="64dp"
+                        android:text="▶ ❚❚"
+                        android:textSize="18sp"
+                        app:backgroundTint="@color/pine_light"
+                        app:cornerRadius="12dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnFwd"
+                        android:layout_width="80dp"
+                        android:layout_height="64dp"
+                        android:text="▶▶"
+                        android:textSize="18sp"
+                        app:backgroundTint="@color/pine_light"
+                        app:cornerRadius="12dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnMute"
+                        android:layout_width="80dp"
+                        android:layout_height="64dp"
+                        android:text="🔇"
+                        android:textSize="20sp"
+                        app:backgroundTint="@color/pine_light"
+                        app:cornerRadius="12dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnVolDown"
+                        android:layout_width="80dp"
+                        android:layout_height="64dp"
+                        android:text="🔉"
+                        android:textSize="20sp"
+                        app:backgroundTint="@color/pine_light"
+                        app:cornerRadius="12dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnVolUp"
+                        android:layout_width="80dp"
+                        android:layout_height="64dp"
+                        android:text="🔊"
+                        android:textSize="20sp"
+                        app:backgroundTint="@color/pine_light"
+                        app:cornerRadius="12dp" />
+                </GridLayout>
+            </LinearLayout>
+
+            <!-- Hoja «Mi Roku» -->
+            <LinearLayout
+                android:id="@+id/miRokuCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_margin="12dp"
@@ -88,9 +419,50 @@
                 android:orientation="vertical"
                 android:padding="16dp">
 
+                <View
+                    android:layout_width="48dp"
+                    android:layout_height="5dp"
+                    android:layout_gravity="center_horizontal"
+                    android:background="@drawable/handle_bg" />
+
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="Mi Roku"
+                    android:textColor="@color/snow_white"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Accesos directos, mandar videos, apps y más"
+                    android:textColor="@color/sage"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:id="@+id/estadoText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:textColor="@color/snow_white"
+                    android:textSize="15sp"
+                    android:visibility="gone" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnEstado"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Actualizar estado"
+                    app:backgroundTint="@color/pine_light" />
+
+                <!-- Mandar YouTube -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
                     android:text="Mandar YouTube"
                     android:textColor="@color/gold"
                     android:textSize="18sp"
@@ -123,20 +495,12 @@
                     android:layout_marginTop="8dp"
                     android:text="Abrir Netflix en la tele"
                     app:backgroundTint="@color/pine_light" />
-            </LinearLayout>
 
-            <!-- Mandar video o foto -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_margin="12dp"
-                android:background="@drawable/card_bg"
-                android:orientation="vertical"
-                android:padding="16dp">
-
+                <!-- Mandar video o foto -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
                     android:text="Mandar video o foto del celular"
                     android:textColor="@color/gold"
                     android:textSize="18sp"
@@ -185,205 +549,12 @@
                     android:layout_marginTop="8dp"
                     android:textColor="@color/sage"
                     android:textSize="14sp" />
-            </LinearLayout>
 
-            <!-- Control remoto -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_margin="12dp"
-                android:background="@drawable/card_bg"
-                android:orientation="vertical"
-                android:padding="16dp">
-
+                <!-- Apps de la tele -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Control remoto"
-                    android:textColor="@color/gold"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:orientation="horizontal">
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnBack"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Atrás"
-                        app:backgroundTint="@color/pine_light" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnHome"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:layout_weight="1"
-                        android:text="Inicio"
-                        app:backgroundTint="@color/pine_light" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnPower"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:layout_weight="1"
-                        android:text="Apagar"
-                        app:backgroundTint="@color/red_accent" />
-                </LinearLayout>
-
-                <GridLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_horizontal"
-                    android:layout_marginTop="12dp"
-                    android:columnCount="3"
-                    android:rowCount="3">
-
-                    <com.google.android.material.button.MaterialButton
-                        android:layout_width="72dp"
-                        android:layout_height="64dp"
-                        android:enabled="false"
-                        android:visibility="invisible" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnUp"
-                        android:layout_width="72dp"
-                        android:layout_height="64dp"
-                        android:text="▲"
-                        app:backgroundTint="@color/pine_light" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:layout_width="72dp"
-                        android:layout_height="64dp"
-                        android:enabled="false"
-                        android:visibility="invisible" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnLeft"
-                        android:layout_width="72dp"
-                        android:layout_height="64dp"
-                        android:text="◀"
-                        app:backgroundTint="@color/pine_light" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnOk"
-                        android:layout_width="72dp"
-                        android:layout_height="64dp"
-                        android:text="OK"
-                        app:backgroundTint="@color/red_accent" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnRight"
-                        android:layout_width="72dp"
-                        android:layout_height="64dp"
-                        android:text="▶"
-                        app:backgroundTint="@color/pine_light" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:layout_width="72dp"
-                        android:layout_height="64dp"
-                        android:enabled="false"
-                        android:visibility="invisible" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnDown"
-                        android:layout_width="72dp"
-                        android:layout_height="64dp"
-                        android:text="▼"
-                        app:backgroundTint="@color/pine_light" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:layout_width="72dp"
-                        android:layout_height="64dp"
-                        android:enabled="false"
-                        android:visibility="invisible" />
-                </GridLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:orientation="horizontal">
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnVolDown"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Vol −"
-                        app:backgroundTint="@color/pine_light" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnMute"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:layout_weight="1"
-                        android:text="Silencio"
-                        app:backgroundTint="@color/pine_light" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnVolUp"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:layout_weight="1"
-                        android:text="Vol +"
-                        app:backgroundTint="@color/pine_light" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:orientation="horizontal">
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnRev"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="◀◀"
-                        app:backgroundTint="@color/pine_light" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnPlayPause"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:layout_weight="1"
-                        android:text="▶ ❚❚"
-                        app:backgroundTint="@color/pine_light" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnFwd"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:layout_weight="1"
-                        android:text="▶▶"
-                        app:backgroundTint="@color/pine_light" />
-                </LinearLayout>
-            </LinearLayout>
-
-            <!-- Apps de la tele -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_margin="12dp"
-                android:background="@drawable/card_bg"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
                     android:text="Apps de la tele"
                     android:textColor="@color/gold"
                     android:textSize="18sp"
@@ -402,82 +573,48 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical" />
-            </LinearLayout>
 
-            <!-- Estado -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_margin="12dp"
-                android:background="@drawable/card_bg"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Estado"
-                    android:textColor="@color/gold"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnEstado"
+                <!-- Teclado -->
+                <LinearLayout
+                    android:id="@+id/tecladoSection"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:text="Actualizar estado"
-                    app:backgroundTint="@color/pine_light" />
+                    android:orientation="vertical"
+                    android:visibility="gone">
 
-                <TextView
-                    android:id="@+id/estadoText"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:textColor="@color/snow_white"
-                    android:textSize="15sp"
-                    android:visibility="gone" />
-            </LinearLayout>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:text="Escribir en la tele"
+                        android:textColor="@color/gold"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
 
-            <!-- Teclado -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_margin="12dp"
-                android:background="@drawable/card_bg"
-                android:orientation="vertical"
-                android:padding="16dp">
+                    <EditText
+                        android:id="@+id/etTeclado"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/card_bg"
+                        android:hint="Escribe aquí para buscar en la tele"
+                        android:padding="12dp"
+                        android:textColor="@color/snow_white"
+                        android:textColorHint="@color/sage" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Escribir en la tele"
-                    android:textColor="@color/gold"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
-
-                <EditText
-                    android:id="@+id/etTeclado"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:background="@drawable/card_bg"
-                    android:hint="Escribe aquí para buscar en la tele"
-                    android:padding="12dp"
-                    android:textColor="@color/snow_white"
-                    android:textColorHint="@color/sage" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnTeclado"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:text="Escribir en la tele"
-                    app:backgroundTint="@color/pine_light" />
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnTeclado"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="Escribir en la tele"
+                        app:backgroundTint="@color/pine_light" />
+                </LinearLayout>
             </LinearLayout>
 
             <!-- Ayuda -->
             <LinearLayout
+                android:id="@+id/ayudaCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_margin="12dp"
@@ -497,7 +634,15 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="En la tele ve a Ajustes → Sistema → Ajustes avanzados del sistema → Control por apps móviles → Activado. La tele y el celular deben estar en el mismo Wi-Fi."
+                    android:text="En la tele ve a Ajustes → Sistema → Ajustes avanzados del sistema → Control por apps móviles → Activado. La tele y el celular deben estar en el mismo Wi-Fi y la tele prendida."
+                    android:textColor="@color/sage"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Si la búsqueda no encuentra la tele, escribe su IP a mano arriba. La IP está en la tele: Ajustes → Red → Acerca de."
                     android:textColor="@color/sage"
                     android:textSize="14sp" />
 
@@ -514,7 +659,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
-                android:text="Anticristo Roku v1.0.0 — Sin cuentas, sin anuncios"
+                android:text="Anticristo Roku v1.0.1 — Sin cuentas, sin anuncios"
                 android:textColor="@color/sage"
                 android:textSize="13sp" />
         </LinearLayout>

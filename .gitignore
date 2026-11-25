@@ -12,3 +12,6 @@ app/build/
 signing/
 *.jks
 *.keystore
+
+AnticristoRoku-release.apk
+apk-download/

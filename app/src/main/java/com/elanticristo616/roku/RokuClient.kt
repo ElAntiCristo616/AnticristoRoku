@@ -1,5 +1,7 @@
 package com.elanticristo616.roku
 
+import android.content.Context
+import android.net.wifi.WifiManager
 import android.util.Xml
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -238,32 +240,54 @@ class RokuClient(val ip: String) {
             return null
         }
 
-        /** Busca Rokus en la red Wi-Fi local con SSDP (M-SEARCH, ST: roku:ecp). */
-        suspend fun discover(timeoutMs: Int = 4000): List<RokuDevice> = withContext(Dispatchers.IO) {
+        /** Busca Rokus en la red Wi-Fi local con SSDP.
+         *  Manda cada sonda (ST roku:ecp y ST DIAL) 3 veces y escucha 8 s.
+         *  Usa MulticastLock: sin él, algunos celulares no reciben las
+         *  respuestas y la tele «no aparece» aunque esté ahí. */
+        suspend fun discover(context: Context, timeoutMs: Int = 8000): List<RokuDevice> = withContext(Dispatchers.IO) {
             val found = LinkedHashMap<String, RokuDevice>()
             var socket: DatagramSocket? = null
+            var lock: WifiManager.MulticastLock? = null
             try {
+                val wifi = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager
+                lock = wifi?.createMulticastLock("anticristo-roku")
+                lock?.setReferenceCounted(true)
+                try { lock?.acquire() } catch (e: Exception) { }
                 socket = DatagramSocket()
-                socket.soTimeout = timeoutMs
+                socket.soTimeout = 500
                 val group = InetAddress.getByName("239.255.255.250")
-                val request = (
-                    "M-SEARCH * HTTP/1.1\r\n" +
-                        "HOST: 239.255.255.250:1900\r\n" +
-                        "MAN: \"ns=1\"\r\n" +
-                        "MX: 3\r\n" +
-                        "ST: roku:ecp\r\n" +
-                        "\r\n"
-                    ).toByteArray(StandardCharsets.UTF_8)
-                val packet = DatagramPacket(request, request.size, group, 1900)
-                socket.send(packet)
+                val sts = listOf("roku:ecp", "urn:dial-multiscreen-org:service:dial:1")
+                fun sendProbes() {
+                    for (st in sts) {
+                        val request = (
+                            "M-SEARCH * HTTP/1.1\r\n" +
+                                "HOST: 239.255.255.250:1900\r\n" +
+                                "MAN: \"ns=1\"\r\n" +
+                                "MX: 3\r\n" +
+                                "ST: $st\r\n" +
+                                "\r\n"
+                            ).toByteArray(StandardCharsets.UTF_8)
+                        socket?.send(DatagramPacket(request, request.size, group, 1900))
+                    }
+                }
                 val buf = ByteArray(4096)
                 val deadline = System.currentTimeMillis() + timeoutMs
+                var sent = 0
+                var nextSend = 0L
                 while (System.currentTimeMillis() < deadline) {
+                    val now = System.currentTimeMillis()
+                    if (sent < 3 && now >= nextSend) {
+                        try { sendProbes() } catch (e: Exception) { }
+                        sent++
+                        nextSend = now + 500
+                    }
                     try {
                         val recv = DatagramPacket(buf, buf.size)
                         socket.receive(recv)
                         val text = String(recv.data, 0, recv.length, StandardCharsets.UTF_8)
-                        if (!text.contains("roku:ecp", ignoreCase = true)) continue
+                        val isRoku = text.contains("roku:ecp", ignoreCase = true)
+                        val isDial = text.contains("dial", ignoreCase = true)
+                        if (!isRoku && !isDial) continue
                         val location = Regex("LOCATION:\\s*(\\S+)", RegexOption.IGNORE_CASE)
                             .find(text)?.groupValues?.getOrNull(1) ?: continue
                         val ip = Regex("://([0-9.]+)").find(location)?.groupValues?.getOrNull(1)
@@ -275,6 +299,9 @@ class RokuClient(val ip: String) {
                             } catch (e: Exception) {
                                 null
                             }
+                            // Una respuesta DIAL pura (sin roku:ecp) solo vale si
+                            // el aparato responde como Roku al pedirle su info.
+                            if (info == null && !isRoku) continue
                             found[ip] = RokuDevice(
                                 ip = ip,
                                 name = info?.friendlyName?.ifBlank { null } ?: "Roku TV",
@@ -283,13 +310,14 @@ class RokuClient(val ip: String) {
                             )
                         }
                     } catch (e: java.net.SocketTimeoutException) {
-                        break
+                        // Sin respuesta en este intervalo: se sigue esperando
                     }
                 }
             } catch (e: Exception) {
                 // Sin red o sin permiso: se devuelve lo encontrado (vacío)
             } finally {
                 try { socket?.close() } catch (e: Exception) { }
+                try { if (lock?.isHeld == true) lock.release() } catch (e: Exception) { }
             }
             found.values.toList()
         }

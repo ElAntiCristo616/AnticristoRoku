@@ -21,6 +21,11 @@ import java.io.FileOutputStream
  * NOTA: duplicar pantalla (Miracast) no se puede hacer desde una app
  * de terceros; esta app manda videos y controla la tele, que es lo
  * que sí permiten los protocolos abiertos de Roku.
+ * Pantalla principal con la estructura del control de la app oficial
+ * de Roku (barra superior, iconos, D-pad en cruz, rejilla, hoja
+ * «Mi Roku»), con el tema navideño de la app. Sin micrófono ni
+ * audífonos: son exclusivos de la app oficial. Sin guía: ECP no
+ * tiene tecla Guide.
  */
 class MainActivity : AppCompatActivity() {
 
@@ -44,7 +49,28 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // Barra superior
+        binding.btnCerrar.setOnClickListener { desconectar() }
+        binding.tvNombreTele.setOnClickListener { buscarTeles() }
+
+        // Mi tele
         binding.btnBuscar.setOnClickListener { buscarTeles() }
+        binding.btnConectarIp.setOnClickListener { conectarPorIp() }
+        binding.btnCambiarTele.setOnClickListener {
+            binding.searchControls.visibility = View.VISIBLE
+            binding.btnCambiarTele.visibility = View.GONE
+        }
+
+        // Fila de iconos del control
+        binding.btnBuscarTop.setOnClickListener { tecla("Search") }
+        binding.btnTecladoIcono.setOnClickListener {
+            val sec = binding.tecladoSection
+            sec.visibility = if (sec.visibility == View.VISIBLE) View.GONE else View.VISIBLE
+        }
+        binding.btnAjustesIcono.setOnClickListener {
+            val card = binding.ayudaCard
+            card.visibility = if (card.visibility == View.VISIBLE) View.GONE else View.VISIBLE
+        }
 
         binding.btnYouTube.setOnClickListener { mandarYouTube() }
         binding.btnNetflix.setOnClickListener { mandarNetflix() }
@@ -67,6 +93,8 @@ class MainActivity : AppCompatActivity() {
         binding.btnRev.setOnClickListener { tecla("Rev") }
         binding.btnFwd.setOnClickListener { tecla("Fwd") }
         binding.btnPower.setOnClickListener { tecla("PowerOff") }
+        binding.btnRepetir.setOnClickListener { tecla("InstantReplay") }
+        binding.btnInfo.setOnClickListener { tecla("Info") }
 
         binding.btnActualizarApps.setOnClickListener { actualizarApps() }
         binding.btnEstado.setOnClickListener { actualizarEstado() }
@@ -78,6 +106,7 @@ class MainActivity : AppCompatActivity() {
         if (lastIp != null) {
             conectar(lastIp, lastName ?: "Roku TV", silencioso = true)
         } else {
+            actualizarVisibilidad()
             binding.tvStatusText.text = "Sin tele conectada. Toca «Buscar teles»."
         }
     }
@@ -87,6 +116,35 @@ class MainActivity : AppCompatActivity() {
         try { server?.stop() } catch (e: Exception) { }
     }
 
+    // ---------- Visibilidad según conexión ----------
+
+    /** Muestra el control solo con tele conectada; la sección «Mi tele»
+     *  queda visible siempre: sin tele muestra el buscador, con tele
+     *  muestra el nombre con punto verde y el botón de cambiar. */
+    private fun actualizarVisibilidad() {
+        val conectado = client != null
+        binding.remoteSection.visibility = if (conectado) View.VISIBLE else View.GONE
+        binding.tvNombreTele.text = if (conectado) "● ${connectedName ?: "Roku TV"}" else "● Sin tele"
+        if (conectado) {
+            binding.searchControls.visibility = View.GONE
+            binding.btnCambiarTele.visibility = View.VISIBLE
+        } else {
+            binding.searchControls.visibility = View.VISIBLE
+            binding.btnCambiarTele.visibility = View.GONE
+        }
+    }
+
+    /** Cierra el control (botón X): desconecta sin borrar nada más.
+     *  Borra la última tele guardada para no reconectar sola al abrir. */
+    private fun desconectar() {
+        client = null
+        connectedIp = null
+        connectedName = null
+        prefs.edit().remove("last_ip").remove("last_name").apply()
+        binding.tvStatusText.text = "Sin tele conectada. Toca «Buscar teles»."
+        actualizarVisibilidad()
+    }
+
     // ---------- Conexión ----------
 
     private fun buscarTeles() {
@@ -94,14 +152,15 @@ class MainActivity : AppCompatActivity() {
         binding.devicesContainer.removeAllViews()
         lifecycleScope.launch {
             val devices = try {
-                RokuClient.discover()
+                RokuClient.discover(this@MainActivity)
             } catch (e: Exception) {
                 emptyList()
             }
             binding.devicesContainer.removeAllViews()
             if (devices.isEmpty()) {
                 binding.tvStatusText.text = "No encontré ninguna Roku en este Wi-Fi.\n" +
-                    "Revisa que la tele esté prendida y en el mismo Wi-Fi que tu celular."
+                    "Revisa que la tele esté prendida y en el mismo Wi-Fi que tu celular. " +
+                    "Si sigue sin aparecer, escribe su IP a mano abajo."
                 return@launch
             }
             binding.tvStatusText.text = "Toca tu tele para conectar:"
@@ -115,16 +174,31 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /** Conecta escribiendo la IP a mano (Ajustes → Red → Acerca de en la tele). */
+    private fun conectarPorIp() {
+        val ip = binding.etIpManual.text.toString().trim()
+        if (!Regex("""^\d{1,3}(\.\d{1,3}){3}$""").matches(ip)) {
+            Toast.makeText(this, "Esa IP no se ve bien. Ejemplo: 192.168.1.5", Toast.LENGTH_LONG).show()
+            return
+        }
+        binding.tvStatusText.text = "Conectando con $ip…"
+        conectar(ip, "Roku TV")
+    }
+
     private fun conectar(ip: String, name: String, silencioso: Boolean = false) {
         lifecycleScope.launch {
             val c = RokuClient(ip)
             val ok = try { c.ping() } catch (e: Exception) { false }
             if (ok) {
+                // Nombre real de la tele, si responde
+                val info = try { c.queryDeviceInfo() } catch (e: Exception) { null }
+                val realName = info?.friendlyName?.ifBlank { null } ?: name
                 client = c
                 connectedIp = ip
-                connectedName = name
-                prefs.edit().putString("last_ip", ip).putString("last_name", name).apply()
-                binding.tvStatusText.text = "Conectada: $name ($ip)"
+                connectedName = realName
+                prefs.edit().putString("last_ip", ip).putString("last_name", realName).apply()
+                binding.tvStatusText.text = "Conectada: $realName ($ip)"
+                actualizarVisibilidad()
                 actualizarApps()
                 actualizarEstado()
             } else {
@@ -134,6 +208,7 @@ class MainActivity : AppCompatActivity() {
                 } else {
                     binding.tvStatusText.text = "Sin tele conectada. Toca «Buscar teles»."
                 }
+                actualizarVisibilidad()
             }
         }
     }
