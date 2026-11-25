@@ -1,5 +1,7 @@
 package com.elanticristo616.roku
 
+import android.content.Context
+import android.net.wifi.WifiManager
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.BufferedReader
@@ -153,33 +155,70 @@ class MediaServer(port: Int) {
         return Triple(start.coerceAtLeast(0), clampedEnd, true)
     }
 
-    /** URL local del archivo que se está sirviendo, o null si no hay. */
-    fun mediaUrl(): String? {
+    /** URL local del archivo que se está sirviendo, o null si no hay.
+     *  Usa la IP del Wi-Fi (nunca la de los datos móviles): si la URL
+     *  llevara la IP del operador, la tele no podría bajar el archivo. */
+    fun mediaUrl(context: Context? = null): String? {
         val f = file ?: return null
-        val ip = localIp() ?: return null
+        val ip = localIp(context) ?: return null
         return "http://$ip:$listeningPort/media"
     }
 
     companion object {
-        /** Primera IPv4 local (192.168.x.x, 10.x.x.x...). */
-        fun localIp(): String? {
+        /** IP del Wi-Fi desde WifiManager: la más fiable.
+         *  connectionInfo.ipAddress viene en little-endian. Null sin Wi-Fi. */
+        fun wifiIp(context: Context?): String? {
+            if (context == null) return null
             return try {
+                val wifi = context.applicationContext
+                    .getSystemService(Context.WIFI_SERVICE) as? WifiManager ?: return null
+                val raw = wifi.connectionInfo?.ipAddress ?: 0
+                if (raw == 0) return null
+                "${raw and 0xFF}.${(raw shr 8) and 0xFF}.${(raw shr 16) and 0xFF}.${(raw shr 24) and 0xFF}"
+            } catch (e: Exception) {
+                null
+            }
+        }
+
+        /** IP local para el servidor: primero la del Wi-Fi (WifiManager).
+         *  Sin ella, se escanean las interfaces prefiriendo wlan* y 192.168.x.x;
+         *  una 10.x de datos móviles (rmnet) solo se usa si no hay ninguna otra. */
+        fun localIp(context: Context? = null): String? {
+            wifiIp(context)?.let { return it }
+            return try {
+                val candidates = mutableListOf<Pair<Int, String>>()
                 val ifaces = NetworkInterface.getNetworkInterfaces()
                 while (ifaces.hasMoreElements()) {
                     val iface = ifaces.nextElement()
                     if (!iface.isUp || iface.isLoopback) continue
+                    val name = iface.name ?: ""
+                    val isWlan = name.startsWith("wlan") || name.startsWith("wifi")
                     val addrs = iface.inetAddresses
                     while (addrs.hasMoreElements()) {
                         val addr = addrs.nextElement()
-                        if (addr is Inet4Address && addr.isSiteLocalAddress) {
-                            return addr.hostAddress
+                        if (addr !is Inet4Address || !addr.isSiteLocalAddress) continue
+                        val ip = addr.hostAddress ?: continue
+                        val score = when {
+                            isWlan && ip.startsWith("192.168.") -> 1
+                            isWlan && isPrivate172(ip) -> 2
+                            ip.startsWith("192.168.") -> 3
+                            isPrivate172(ip) -> 4
+                            isWlan && ip.startsWith("10.") -> 5
+                            else -> 6
                         }
+                        candidates += score to ip
                     }
                 }
-                null
+                candidates.sortedBy { it.first }.firstOrNull()?.second
             } catch (e: Exception) {
                 null
             }
+        }
+
+        private fun isPrivate172(ip: String): Boolean {
+            val parts = ip.split(".")
+            val second = parts.getOrNull(1)?.toIntOrNull() ?: return false
+            return parts.getOrNull(0) == "172" && second in 16..31
         }
 
         fun mimeFor(name: String): String {

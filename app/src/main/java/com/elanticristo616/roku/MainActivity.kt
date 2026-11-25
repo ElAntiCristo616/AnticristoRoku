@@ -226,8 +226,12 @@ class MainActivity : AppCompatActivity() {
     private fun tecla(key: String) {
         val c = requiereConexion() ?: return
         lifecycleScope.launch {
-            val ok = try { c.keypress(key) } catch (e: Exception) { false }
-            if (!ok) mostrarErrorConexion()
+            try {
+                val code = c.keypressCode(key)
+                if (code !in 200..299) mostrarErrorConexion(motivoDe(RokuException(code)))
+            } catch (e: RokuException) {
+                mostrarErrorConexion(motivoDe(e))
+            }
         }
     }
 
@@ -239,8 +243,11 @@ class MainActivity : AppCompatActivity() {
             return
         }
         lifecycleScope.launch {
-            val ok = try { c.sendText(texto) } catch (e: Exception) { false }
-            if (!ok) mostrarErrorConexion()
+            try {
+                c.sendText(texto)
+            } catch (e: RokuException) {
+                mostrarErrorConexion(motivoDe(e))
+            }
         }
     }
 
@@ -256,11 +263,13 @@ class MainActivity : AppCompatActivity() {
         }
         binding.tvStatusText.text = "Mandando video a la tele…"
         lifecycleScope.launch {
-            val ok = try { c.launchYouTube(id) } catch (e: Exception) { false }
-            if (ok) {
+            try {
+                c.launchYouTube(id)
                 binding.tvStatusText.text = "Video mandado a la tele. Conectada: ${connectedName ?: ""}"
-            } else {
-                mostrarErrorConexion()
+            } catch (e: RokuException) {
+                val motivo = if (e.code == 404) "YouTube no está instalado en la tele."
+                    else motivoDe(e)
+                mostrarErrorConexion(motivo)
             }
         }
     }
@@ -268,8 +277,14 @@ class MainActivity : AppCompatActivity() {
     private fun mandarNetflix() {
         val c = requiereConexion() ?: return
         lifecycleScope.launch {
-            val ok = try { c.launchNetflix() } catch (e: Exception) { false }
-            if (!ok) mostrarErrorConexion()
+            try {
+                c.launchNetflix()
+                binding.tvStatusText.text = "Abriendo Netflix en la tele…"
+            } catch (e: RokuException) {
+                val motivo = if (e.code == 404) "Netflix no está instalado en la tele."
+                    else motivoDe(e)
+                mostrarErrorConexion(motivo)
+            }
         }
     }
 
@@ -288,8 +303,8 @@ class MainActivity : AppCompatActivity() {
                 binding.mediaStatusText.text = "No pude leer ese archivo. Prueba con otro."
                 return@launch
             }
-            val ok = mandarArchivoLocal(c, file)
-            if (!ok) mostrarErrorConexion()
+            // mandarArchivoLocal ya muestra el motivo real si algo falla
+            mandarArchivoLocal(c, file)
         }
     }
 
@@ -301,12 +316,19 @@ class MainActivity : AppCompatActivity() {
             return
         }
         lifecycleScope.launch {
-            val mediaType = MediaServer.mediaTypeFor(url.substringBefore('?'))
-            val ok = try { c.launch("2213", url, mediaType) } catch (e: Exception) { false }
-            if (ok) {
-                binding.mediaStatusText.text = "Mandando a la tele…"
-            } else {
-                mostrarErrorConexion()
+            try {
+                val code = c.launchCode("2213", url, MediaServer.mediaTypeFor(url.substringBefore('?')))
+                if (code in 200..299) {
+                    binding.mediaStatusText.text = "Mandando a la tele…"
+                } else {
+                    val motivo = motivoDe(RokuException(code))
+                    binding.mediaStatusText.text = "No se pudo mandar. $motivo"
+                    mostrarErrorConexion(motivo)
+                }
+            } catch (e: RokuException) {
+                val motivo = motivoDe(e)
+                binding.mediaStatusText.text = "No se pudo mandar. $motivo"
+                mostrarErrorConexion(motivo)
             }
         }
     }
@@ -317,19 +339,43 @@ class MainActivity : AppCompatActivity() {
             val srv = ensureServer()
             srv.file = file
             srv.displayName = file.name
-            val url = srv.mediaUrl()
+            val url = srv.mediaUrl(this)
             if (url == null) {
                 binding.mediaStatusText.text = "No encontré la IP de tu Wi-Fi. Revisa que estés conectado al Wi-Fi."
                 return false
             }
-            val mediaType = MediaServer.mediaTypeFor(file.name)
-            val ok = c.launch("2213", url, mediaType)
-            if (ok) {
-                binding.mediaStatusText.text = "Reproduciendo «${file.name}» en la tele.\n" +
-                    "Mantén la app abierta mientras se ve."
+            // La URL debe llevar la IP del Wi-Fi, nunca la de los datos móviles:
+            // con la IP del operador la tele no puede bajar el archivo.
+            val wifiIp = MediaServer.wifiIp(this)
+            if (wifiIp != null && !url.contains("://$wifiIp:")) {
+                val motivo = "La IP del servidor no es de tu Wi-Fi."
+                binding.mediaStatusText.text = "$motivo La tele no puede bajar el archivo. " +
+                    "Revisa que el celular esté en Wi-Fi."
+                mostrarErrorConexion(motivo)
+                return false
             }
-            ok
+            val mediaType = MediaServer.mediaTypeFor(file.name)
+            try {
+                val code = c.launchCode("2213", url, mediaType)
+                if (code in 200..299) {
+                    binding.mediaStatusText.text = "Reproduciendo «${file.name}» en la tele.\n" +
+                        "Mantén la app abierta mientras se ve."
+                    true
+                } else {
+                    val motivo = motivoDe(RokuException(code))
+                    binding.mediaStatusText.text = "No se pudo mandar. $motivo"
+                    mostrarErrorConexion(motivo)
+                    false
+                }
+            } catch (e: RokuException) {
+                val motivo = motivoDe(e)
+                binding.mediaStatusText.text = "No se pudo mandar. $motivo"
+                mostrarErrorConexion(motivo)
+                false
+            }
         } catch (e: Exception) {
+            binding.mediaStatusText.text = "No se pudo mandar el archivo a la tele."
+            mostrarErrorConexion()
             false
         }
     }
@@ -419,13 +465,22 @@ class MainActivity : AppCompatActivity() {
 
     // ---------- Errores ----------
 
-    private fun mostrarErrorConexion() {
-        Toast.makeText(
-            this,
-            "No pude hablar con la tele. Revisa que esté prendida, en el mismo Wi-Fi que tu celular, " +
-                "y que en la tele esté activado: Ajustes → Sistema → Ajustes avanzados del sistema → " +
-                "Control por apps móviles → Activado.",
-            Toast.LENGTH_LONG
-        ).show()
+    /** Muestra el motivo real del fallo en el texto de estado y en un toast. */
+    private fun mostrarErrorConexion(motivo: String? = null) {
+        val detalle = motivo ?: "Revisa que esté prendida, en el mismo Wi-Fi que tu celular, " +
+            "y que en la tele esté activado: Ajustes → Sistema → Ajustes avanzados del sistema → " +
+            "Control por apps móviles → Activado."
+        val texto = "No pude hablar con la tele. $detalle"
+        binding.tvStatusText.text = texto
+        Toast.makeText(this, texto, Toast.LENGTH_LONG).show()
+    }
+
+    /** Traduce un error de Roku a un motivo en español. */
+    private fun motivoDe(e: RokuException): String = when {
+        e.timedOut -> "No se pudo conectar: tiempo agotado."
+        e.code == 404 -> "La tele respondió 404: esa app no está instalada en la tele."
+        e.code == 403 -> "La tele respondió 403: revisa Control por apps móviles en Activado."
+        e.code > 0 -> "La tele respondió ${e.code}."
+        else -> "No se pudo conectar con la tele. Revisa que esté prendida y en el mismo Wi-Fi."
     }
 }

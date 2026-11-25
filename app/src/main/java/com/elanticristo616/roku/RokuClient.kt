@@ -25,6 +25,11 @@ import java.nio.charset.StandardCharsets
  *  - SSDP: descubrimiento con M-SEARCH (ST: roku:ecp)
  * No requiere emparejar ni cuenta. Todo queda en la red local.
  */
+
+/** Error hablando con la tele: lleva el código HTTP real (-1 = sin conexión). */
+class RokuException(val code: Int = -1, val timedOut: Boolean = false, message: String = "") :
+    Exception(message)
+
 class RokuClient(val ip: String) {
 
     private val base = "http://$ip:8060"
@@ -37,21 +42,30 @@ class RokuClient(val ip: String) {
      *  PowerOn, Info, Search, InstantReplay, ChannelUp, ChannelDown, InputTuner,
      *  o Lit_<carácter> para escribir texto. */
     suspend fun keypress(key: String): Boolean = withContext(Dispatchers.IO) {
-        post("$base/keypress/$key")
+        try { keypressCode(key) in 200..299 } catch (e: Exception) { false }
     }
 
-    /** Escribe texto en la tele, tecla por tecla (Lit_). */
-    suspend fun sendText(text: String): Boolean = withContext(Dispatchers.IO) {
+    /** Pulsa una tecla y devuelve el código HTTP real. Lanza RokuException sin conexión. */
+    suspend fun keypressCode(key: String): Int = withContext(Dispatchers.IO) {
+        postCode("$base/keypress/$key")
+    }
+
+    /** Escribe texto en la tele, tecla por tecla (Lit_). Lanza RokuException si falla. */
+    suspend fun sendText(text: String) = withContext(Dispatchers.IO) {
         for (ch in text) {
             val encoded = URLEncoder.encode(ch.toString(), StandardCharsets.UTF_8.name())
                 .replace("+", "%20")
-            if (!post("$base/keypress/Lit_$encoded")) return@withContext false
+            val code = postCode("$base/keypress/Lit_$encoded")
+            if (code !in 200..299) throw RokuException(code, false, "Tecla Lit_ $code")
         }
-        true
     }
 
     /** Lanza un canal por su id (p. ej. 2213 = Reproductor de Roku). */
     suspend fun launch(id: String, contentId: String? = null, mediaType: String? = null): Boolean =
+        try { launchCode(id, contentId, mediaType) in 200..299 } catch (e: Exception) { false }
+
+    /** Lanza un canal y devuelve el código HTTP real. Lanza RokuException sin conexión. */
+    suspend fun launchCode(id: String, contentId: String? = null, mediaType: String? = null): Int =
         withContext(Dispatchers.IO) {
             val url = buildString {
                 append("$base/launch/$id")
@@ -60,17 +74,35 @@ class RokuClient(val ip: String) {
                 if (mediaType != null) params += "mediaType=" + URLEncoder.encode(mediaType, "UTF-8")
                 if (params.isNotEmpty()) append("?" + params.joinToString("&"))
             }
-            post(url)
+            postCode(url)
         }
 
-    /** Lanza YouTube por DIAL con un video (v=<id>). Devuelve true si la tele aceptó (201). */
-    suspend fun launchYouTube(videoId: String): Boolean = withContext(Dispatchers.IO) {
-        postDial("YouTube", "v=$videoId")
+    /** Lanza YouTube por DIAL con un video (v=<id>). Primero revisa que esté
+     *  instalada (404 o installable = no instalada); manda Origin como los
+     *  clientes reales de YouTube; si DIAL falla, prueba por ECP (canal 12).
+     *  Devuelve el código HTTP. Lanza RokuException con el código real si falla. */
+    suspend fun launchYouTube(videoId: String): Int = withContext(Dispatchers.IO) {
+        if (!checkDialApp("YouTube")) throw RokuException(404, false, "YouTube no instalado")
+        val code = postDialCode("YouTube", "v=$videoId", origin = "https://www.youtube.com")
+        if (code in 200..299) return@withContext code
+        val fb = postCode("$base/launch/12?contentID=" + URLEncoder.encode(videoId, "UTF-8"))
+        if (fb in 200..299) return@withContext fb
+        throw RokuException(fb, false, "DIAL $code, ECP $fb")
     }
 
-    /** Lanza Netflix por DIAL (abre la app). */
-    suspend fun launchNetflix(): Boolean = withContext(Dispatchers.IO) {
-        postDial("Netflix", null)
+    /** Lanza Netflix por DIAL (abre la app). Revisa que esté instalada primero. */
+    suspend fun launchNetflix(): Int = withContext(Dispatchers.IO) {
+        if (!checkDialApp("Netflix")) throw RokuException(404, false, "Netflix no instalado")
+        postDialCode("Netflix", null)
+    }
+
+    /** ¿La app DIAL está instalada? GET /apps/<app>: 404 o state=installable = no. */
+    private fun checkDialApp(app: String): Boolean {
+        val (code, body) = getCode("$base/apps/$app")
+        if (code == 404) return false
+        if (code != 200) return false
+        if (body != null && Regex("""<state>\s*installable\s*</state>""").containsMatchIn(body)) return false
+        return true
     }
 
     /** Apps instaladas en la tele. */
@@ -96,58 +128,75 @@ class RokuClient(val ip: String) {
         get("$base/query/device-info") != null
     }
 
-    private fun post(url: String): Boolean {
-        return try {
-            val conn = URL(url).openConnection() as HttpURLConnection
+    /** POST que devuelve el código HTTP real. Lanza RokuException sin conexión. */
+    private fun postCode(url: String): Int {
+        val conn = URL(url).openConnection() as HttpURLConnection
+        try {
             conn.requestMethod = "POST"
             conn.connectTimeout = 4000
             conn.readTimeout = 5000
             conn.connect()
-            val code = conn.responseCode
-            conn.disconnect()
-            code in 200..299
+            return conn.responseCode
+        } catch (e: java.net.SocketTimeoutException) {
+            throw RokuException(-1, timedOut = true, "Tiempo agotado")
         } catch (e: Exception) {
-            false
+            throw RokuException(-1, false, e.message ?: "Sin conexión")
+        } finally {
+            try { conn.disconnect() } catch (e: Exception) { }
         }
     }
 
-    private fun postDial(app: String, body: String?): Boolean {
-        return try {
-            val conn = URL("$base/apps/$app").openConnection() as HttpURLConnection
+    /** POST DIAL que devuelve el código HTTP real. Lanza RokuException sin conexión. */
+    private fun postDialCode(app: String, body: String?, origin: String? = null): Int {
+        val conn = URL("$base/apps/$app").openConnection() as HttpURLConnection
+        try {
             conn.requestMethod = "POST"
             conn.connectTimeout = 5000
             conn.readTimeout = 8000
+            if (origin != null) conn.setRequestProperty("Origin", origin)
             if (body != null) {
                 conn.doOutput = true
-                conn.setRequestProperty("Content-Type", "text/plain; charset=utf-8")
+                conn.setRequestProperty("Content-Type", "text/plain")
                 conn.outputStream.use { it.write(body.toByteArray(StandardCharsets.UTF_8)) }
             }
             conn.connect()
-            val code = conn.responseCode
-            conn.disconnect()
-            // DIAL responde 201 Created cuando lanza la app
-            code in 200..299
+            return conn.responseCode
+        } catch (e: java.net.SocketTimeoutException) {
+            throw RokuException(-1, timedOut = true, "Tiempo agotado")
         } catch (e: Exception) {
-            false
+            throw RokuException(-1, false, e.message ?: "Sin conexión")
+        } finally {
+            try { conn.disconnect() } catch (e: Exception) { }
         }
     }
 
     private fun get(url: String): String? {
         return try {
-            val conn = URL(url).openConnection() as HttpURLConnection
+            val (code, body) = getCode(url)
+            if (code == 200) body else null
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    /** GET que devuelve (código HTTP, cuerpo o null). Lanza RokuException sin conexión. */
+    private fun getCode(url: String): Pair<Int, String?> {
+        val conn = URL(url).openConnection() as HttpURLConnection
+        try {
             conn.requestMethod = "GET"
             conn.connectTimeout = 4000
             conn.readTimeout = 5000
             conn.connect()
-            if (conn.responseCode != 200) {
-                conn.disconnect()
-                return null
-            }
+            val code = conn.responseCode
+            if (code != 200) return code to null
             val text = BufferedReader(InputStreamReader(conn.inputStream, StandardCharsets.UTF_8)).readText()
-            conn.disconnect()
-            text
+            return code to text
+        } catch (e: java.net.SocketTimeoutException) {
+            throw RokuException(-1, timedOut = true, "Tiempo agotado")
         } catch (e: Exception) {
-            null
+            throw RokuException(-1, false, e.message ?: "Sin conexión")
+        } finally {
+            try { conn.disconnect() } catch (e: Exception) { }
         }
     }
 
