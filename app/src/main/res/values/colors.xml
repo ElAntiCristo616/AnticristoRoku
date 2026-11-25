@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="pine_dark">#04140E</color>
+    <color name="pine">#0E3426</color>
+    <color name="pine_light">#1A4A33</color>
+    <color name="red_accent">#CD2D32</color>
+    <color name="snow_white">#FFFFFF</color>
+    <color name="sage">#A8C3B5</color>
+    <color name="gold">#F1CF75</color>
+</resources>

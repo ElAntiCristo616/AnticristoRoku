@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.AnticristoRoku" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/red_accent</item>
+        <item name="colorOnPrimary">@color/snow_white</item>
+        <item name="colorPrimaryContainer">@color/pine</item>
+        <item name="colorOnPrimaryContainer">@color/snow_white</item>
+        <item name="colorSecondary">@color/sage</item>
+        <item name="colorSurface">@color/pine</item>
+        <item name="colorOnSurface">@color/snow_white</item>
+        <item name="android:windowBackground">@color/pine_dark</item>
+        <item name="android:textColor">@color/snow_white</item>
+        <item name="android:textColorHint">@color/sage</item>
+    </style>
+</resources>

@@ -1,0 +1,530 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_gradient">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingBottom="24dp">
+
+            <com.elanticristo616.roku.GarlandView
+                android:id="@+id/garlandView"
+                android:layout_width="match_parent"
+                android:layout_height="48dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:text="Anticristo Roku"
+                android:textColor="@color/snow_white"
+                android:textSize="30sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:text="Manda videos y controla tu Roku"
+                android:textColor="@color/sage"
+                android:textSize="15sp" />
+
+            <!-- Mi tele -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="12dp"
+                android:background="@drawable/card_bg"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Mi tele"
+                    android:textColor="@color/gold"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvStatusText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Sin tele conectada. Toca «Buscar teles»."
+                    android:textColor="@color/snow_white"
+                    android:textSize="15sp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnBuscar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="Buscar teles"
+                    app:backgroundTint="@color/red_accent" />
+
+                <LinearLayout
+                    android:id="@+id/devicesContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+            </LinearLayout>
+
+            <!-- Mandar YouTube -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="12dp"
+                android:background="@drawable/card_bg"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Mandar YouTube"
+                    android:textColor="@color/gold"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <EditText
+                    android:id="@+id/etYouTube"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/card_bg"
+                    android:hint="Pega el enlace del video de YouTube"
+                    android:inputType="textUri"
+                    android:padding="12dp"
+                    android:textColor="@color/snow_white"
+                    android:textColorHint="@color/sage" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnYouTube"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="Mandar a la tele"
+                    app:backgroundTint="@color/red_accent" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnNetflix"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Abrir Netflix en la tele"
+                    app:backgroundTint="@color/pine_light" />
+            </LinearLayout>
+
+            <!-- Mandar video o foto -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="12dp"
+                android:background="@drawable/card_bg"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Mandar video o foto del celular"
+                    android:textColor="@color/gold"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnElegirVideo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="Elegir video del celular"
+                    app:backgroundTint="@color/red_accent" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnElegirFoto"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Elegir foto del celular"
+                    app:backgroundTint="@color/red_accent" />
+
+                <EditText
+                    android:id="@+id/etUrlDirecta"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/card_bg"
+                    android:hint="O pega una URL directa de video (mp4)"
+                    android:inputType="textUri"
+                    android:padding="12dp"
+                    android:textColor="@color/snow_white"
+                    android:textColorHint="@color/sage" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnUrlDirecta"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Mandar URL a la tele"
+                    app:backgroundTint="@color/pine_light" />
+
+                <TextView
+                    android:id="@+id/mediaStatusText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:textColor="@color/sage"
+                    android:textSize="14sp" />
+            </LinearLayout>
+
+            <!-- Control remoto -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="12dp"
+                android:background="@drawable/card_bg"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Control remoto"
+                    android:textColor="@color/gold"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnBack"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Atrás"
+                        app:backgroundTint="@color/pine_light" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnHome"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
+                        android:text="Inicio"
+                        app:backgroundTint="@color/pine_light" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnPower"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
+                        android:text="Apagar"
+                        app:backgroundTint="@color/red_accent" />
+                </LinearLayout>
+
+                <GridLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="12dp"
+                    android:columnCount="3"
+                    android:rowCount="3">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:layout_width="72dp"
+                        android:layout_height="64dp"
+                        android:enabled="false"
+                        android:visibility="invisible" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnUp"
+                        android:layout_width="72dp"
+                        android:layout_height="64dp"
+                        android:text="▲"
+                        app:backgroundTint="@color/pine_light" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:layout_width="72dp"
+                        android:layout_height="64dp"
+                        android:enabled="false"
+                        android:visibility="invisible" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnLeft"
+                        android:layout_width="72dp"
+                        android:layout_height="64dp"
+                        android:text="◀"
+                        app:backgroundTint="@color/pine_light" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnOk"
+                        android:layout_width="72dp"
+                        android:layout_height="64dp"
+                        android:text="OK"
+                        app:backgroundTint="@color/red_accent" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnRight"
+                        android:layout_width="72dp"
+                        android:layout_height="64dp"
+                        android:text="▶"
+                        app:backgroundTint="@color/pine_light" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:layout_width="72dp"
+                        android:layout_height="64dp"
+                        android:enabled="false"
+                        android:visibility="invisible" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnDown"
+                        android:layout_width="72dp"
+                        android:layout_height="64dp"
+                        android:text="▼"
+                        app:backgroundTint="@color/pine_light" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:layout_width="72dp"
+                        android:layout_height="64dp"
+                        android:enabled="false"
+                        android:visibility="invisible" />
+                </GridLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnVolDown"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Vol −"
+                        app:backgroundTint="@color/pine_light" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnMute"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
+                        android:text="Silencio"
+                        app:backgroundTint="@color/pine_light" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnVolUp"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
+                        android:text="Vol +"
+                        app:backgroundTint="@color/pine_light" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnRev"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="◀◀"
+                        app:backgroundTint="@color/pine_light" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnPlayPause"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
+                        android:text="▶ ❚❚"
+                        app:backgroundTint="@color/pine_light" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnFwd"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
+                        android:text="▶▶"
+                        app:backgroundTint="@color/pine_light" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Apps de la tele -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="12dp"
+                android:background="@drawable/card_bg"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Apps de la tele"
+                    android:textColor="@color/gold"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnActualizarApps"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="Actualizar apps"
+                    app:backgroundTint="@color/pine_light" />
+
+                <LinearLayout
+                    android:id="@+id/appsContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+            </LinearLayout>
+
+            <!-- Estado -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="12dp"
+                android:background="@drawable/card_bg"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Estado"
+                    android:textColor="@color/gold"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnEstado"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="Actualizar estado"
+                    app:backgroundTint="@color/pine_light" />
+
+                <TextView
+                    android:id="@+id/estadoText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:textColor="@color/snow_white"
+                    android:textSize="15sp"
+                    android:visibility="gone" />
+            </LinearLayout>
+
+            <!-- Teclado -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="12dp"
+                android:background="@drawable/card_bg"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Escribir en la tele"
+                    android:textColor="@color/gold"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <EditText
+                    android:id="@+id/etTeclado"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/card_bg"
+                    android:hint="Escribe aquí para buscar en la tele"
+                    android:padding="12dp"
+                    android:textColor="@color/snow_white"
+                    android:textColorHint="@color/sage" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnTeclado"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="Escribir en la tele"
+                    app:backgroundTint="@color/pine_light" />
+            </LinearLayout>
+
+            <!-- Ayuda -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="12dp"
+                android:background="@drawable/card_bg"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Si no conecta"
+                    android:textColor="@color/gold"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="En la tele ve a Ajustes → Sistema → Ajustes avanzados del sistema → Control por apps móviles → Activado. La tele y el celular deben estar en el mismo Wi-Fi."
+                    android:textColor="@color/sage"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Duplicar la pantalla completa no se puede desde ninguna app: eso solo lo hace el sistema del celular. Esta app manda videos y controla la tele."
+                    android:textColor="@color/sage"
+                    android:textSize="14sp" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:text="Anticristo Roku v1.0.0 — Sin cuentas, sin anuncios"
+                android:textColor="@color/sage"
+                android:textSize="13sp" />
+        </LinearLayout>
+    </ScrollView>
+
+    <com.elanticristo616.roku.SnowView
+        android:id="@+id/snowView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clickable="false"
+        android:focusable="false" />
+
+</FrameLayout>
