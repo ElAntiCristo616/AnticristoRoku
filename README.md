@@ -12,8 +12,8 @@ y mandarle videos, sin cuentas, sin anuncios y sin rastreadores.
 - **Mandar YouTube** por DIAL: pega el enlace, la app extrae el id del video
   y hace `POST /apps/YouTube` con `v=<id>`. También abre Netflix.
 - **Mandar videos y fotos del celular**: la app levanta un servidor HTTP local
-  (NanoHTTPD, solo red local) que sirve el archivo elegido y lanza el
-  Reproductor de Roku (canal 2213) con
+  (propio, con `java.net.ServerSocket`, solo red local) que sirve el archivo
+  elegido y lanza el Reproductor de Roku (canal 2213) con
   `POST /launch/2213?contentID=<url-local>&mediaType=movie|song|photo`.
   También acepta una URL directa de video (mp4).
 - **Estado**: muestra qué app está abierta en la tele
@@ -35,7 +35,8 @@ la tele, que es lo que sí permiten los protocolos abiertos de Roku.
 ## Técnica
 
 - Kotlin, minSdk 26, targetSdk 34.
-- Dependencias: AndroidX + NanoHTTPD 2.3.2 (Apache 2.0). Sin código GPL.
+- Dependencias: solo AndroidX. El servidor HTTP local es código propio.
+  Sin código GPL.
 - Firma: keystore propio, alias `roku`. El build de release se hace en
   GitHub Actions con los secretos del repo.
 - Tema navideño: verde pino, rojo, nieve animada y guirnalda.
