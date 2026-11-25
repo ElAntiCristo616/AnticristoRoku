@@ -496,6 +496,101 @@
                     android:text="Abrir Netflix en la tele"
                     app:backgroundTint="@color/pine_light" />
 
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Si el botón de arriba no abre el video, prueba con «Transmitir cualquier video» de abajo o con el navegador."
+                    android:textColor="@color/sage"
+                    android:textSize="13sp" />
+
+                <!-- Transmitir cualquier video por el canal receptor -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="Transmitir cualquier video"
+                    android:textColor="@color/gold"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Por el canal receptor (instálalo gratis en la tele: busca «Web Video Caster - Receiver» en Streaming Channels). Funciona con YouTube, TikTok, X, Instagram y Facebook."
+                    android:textColor="@color/sage"
+                    android:textSize="14sp" />
+
+                <EditText
+                    android:id="@+id/etCastLink"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/card_bg"
+                    android:hint="Pega el enlace del video"
+                    android:inputType="textUri"
+                    android:padding="12dp"
+                    android:textColor="@color/snow_white"
+                    android:textColorHint="@color/sage" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnCastLink"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="📺 Transmitir a la tele"
+                    app:backgroundTint="@color/red_accent" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnAbrirNavegador"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="🌐 Abrir navegador"
+                    app:backgroundTint="@color/pine_light" />
+
+                <TextView
+                    android:id="@+id/castStatusText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:textColor="@color/sage"
+                    android:textSize="14sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnCastPausa"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="⏸ Pausa"
+                        app:backgroundTint="@color/pine_light" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnCastSeguir"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
+                        android:text="▶ Seguir"
+                        app:backgroundTint="@color/pine_light" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnCastParar"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
+                        android:text="⏹ Parar"
+                        app:backgroundTint="@color/pine_light" />
+                </LinearLayout>
+
                 <!-- Mandar video o foto -->
                 <TextView
                     android:layout_width="wrap_content"
@@ -653,13 +748,21 @@
                     android:text="Duplicar la pantalla completa no se puede desde ninguna app: eso solo lo hace el sistema del celular. Esta app manda videos y controla la tele."
                     android:textColor="@color/sage"
                     android:textSize="14sp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Para transmitir se usa el canal receptor «Web Video Caster - Receiver» (gratis en la tienda Roku) y yt-dlp con youtubedl-android (GPL-3.0): esta app es de código abierto."
+                    android:textColor="@color/sage"
+                    android:textSize="13sp" />
             </LinearLayout>
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
-                android:text="Anticristo Roku v1.0.1 — Sin cuentas, sin anuncios"
+                android:text="Anticristo Roku v1.1.0 — Sin cuentas, sin anuncios"
                 android:textColor="@color/sage"
                 android:textSize="13sp" />
         </LinearLayout>

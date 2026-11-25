@@ -79,15 +79,23 @@ class RokuClient(val ip: String) {
 
     /** Lanza YouTube por DIAL con un video (v=<id>). Primero revisa que esté
      *  instalada (404 o installable = no instalada); manda Origin como los
-     *  clientes reales de YouTube; si DIAL falla, prueba por ECP (canal 12).
+     *  clientes reales de YouTube; si DIAL falla, prueba por ECP con el
+     *  canal de YouTube en Roku (837; el 12 es Netflix).
      *  Devuelve el código HTTP. Lanza RokuException con el código real si falla. */
     suspend fun launchYouTube(videoId: String): Int = withContext(Dispatchers.IO) {
         if (!checkDialApp("YouTube")) throw RokuException(404, false, "YouTube no instalado")
         val code = postDialCode("YouTube", "v=$videoId", origin = "https://www.youtube.com")
         if (code in 200..299) return@withContext code
-        val fb = postCode("$base/launch/12?contentID=" + URLEncoder.encode(videoId, "UTF-8"))
+        val fb = postCode("$base/launch/837?contentID=" + URLEncoder.encode(videoId, "UTF-8"))
         if (fb in 200..299) return@withContext fb
         throw RokuException(fb, false, "DIAL $code, ECP $fb")
+    }
+
+    /** POST a /input?... para hablar con un canal receptor (Web Video
+     *  Caster - Receiver). Devuelve el código HTTP real.
+     *  Lanza RokuException sin conexión. */
+    suspend fun postInputCode(query: String): Int = withContext(Dispatchers.IO) {
+        postCode("$base/input?$query")
     }
 
     /** Lanza Netflix por DIAL (abre la app). Revisa que esté instalada primero. */

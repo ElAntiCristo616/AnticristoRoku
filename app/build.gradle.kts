@@ -11,8 +11,15 @@ android {
         applicationId = "com.elanticristo616.roku"
         minSdk = 26
         targetSdk = 34
-        versionCode = 3
-        versionName = "1.0.2"
+        versionCode = 4
+        versionName = "1.1.0"
+
+        // yt-dlp trae Python compilado por ABI (~15 MB por ABI):
+        // solo arm64 y armeabi-v7a cubren prácticamente todos los
+        // celulares actuales y mantienen el APK en un tamaño razonable.
+        ndk {
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a")
+        }
     }
 
     signingConfigs {
@@ -59,6 +66,11 @@ dependencies {
     implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     implementation("androidx.activity:activity-ktx:1.9.0")
+
+    // yt-dlp en Android (el mismo motor que usa Seal): saca el video
+    // directo de un enlace sin descargar nada. GPL-3.0: por eso esta
+    // versión de la app es de código abierto.
+    implementation("io.github.junkfood02.youtubedl-android:library:0.18.1")
 
     testImplementation("junit:junit:4.13.2")
 }

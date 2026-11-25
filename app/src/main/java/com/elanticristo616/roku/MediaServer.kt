@@ -29,6 +29,26 @@ class MediaServer(port: Int) {
     @Volatile
     var displayName: String = ""
 
+    /** Se avisa cuando el canal receptor reporta algo:
+     *  (sesión, evento, cuerpo JSON). El canal hace POST a
+     *  /remote_playback/<sesión>/<evento> con el estado (state,
+     *  position, deviceInfo...) en JSON. */
+    @Volatile
+    var onReceiverEvent: ((session: String, event: String, body: String) -> Unit)? = null
+
+    /** URLs largas guardadas por sesión: el canal receptor solo acepta
+     *  URLs de unas 3000 letras, así que las de yt-dlp (que pueden ser
+     *  larguísimas) se le entregan por una redirección corta /go/<sesión>. */
+    private val redirectUrls = java.util.concurrent.ConcurrentHashMap<String, String>()
+
+    /** Guarda una URL larga y devuelve su dirección corta local, o null
+     *  si no hay IP de Wi-Fi para servirla. */
+    fun redirectUrl(context: Context?, sessionId: String, targetUrl: String): String? {
+        val ip = localIp(context) ?: return null
+        redirectUrls[sessionId] = targetUrl
+        return "http://$ip:$listeningPort/go/$sessionId"
+    }
+
     private val serverSocket = ServerSocket(port)
 
     val listeningPort: Int get() = serverSocket.localPort
@@ -67,65 +87,140 @@ class MediaServer(port: Int) {
             val out = BufferedOutputStream(socket.getOutputStream())
             val requestLine = reader.readLine() ?: return
             val parts = requestLine.split(" ")
-            if (parts.size < 2 || parts[0] != "GET") {
-                writeStatus(out, 405, "Method Not Allowed", "text/plain", "Método no permitido".toByteArray())
-                return
-            }
+            if (parts.size < 2) return
+            val method = parts[0]
             val path = parts[1].substringBefore('?')
-            var rangeHeader: String? = null
+            // Cabeceras (se necesitan para Range y para el cuerpo del POST)
+            val headers = mutableMapOf<String, String>()
             var line: String?
             while (reader.readLine().also { line = it } != null && line!!.isNotBlank()) {
-                val header = line!!
-                if (header.startsWith("Range:", ignoreCase = true)) {
-                    rangeHeader = header.substringAfter(':').trim()
+                val idx = line!!.indexOf(':')
+                if (idx > 0) {
+                    headers[line!!.substring(0, idx).trim().lowercase()] =
+                        line!!.substring(idx + 1).trim()
                 }
             }
-            if (path != "/media") {
-                writeStatus(out, 404, "Not Found", "text/plain", "Sin archivo".toByteArray())
-                return
-            }
-            val f = file
-            if (f == null || !f.exists()) {
-                writeStatus(out, 404, "Not Found", "text/plain", "Sin archivo".toByteArray())
-                return
-            }
-            val mime = mimeFor(f.name)
-            val total = f.length()
-            val (start, end, partial) = parseRange(rangeHeader, total)
-            val length = (end - start + 1).coerceAtLeast(0)
-            val headers = StringBuilder()
-            if (partial) {
-                headers.append("HTTP/1.1 206 Partial Content\r\n")
-                headers.append("Content-Range: bytes $start-$end/$total\r\n")
-            } else {
-                headers.append("HTTP/1.1 200 OK\r\n")
-            }
-            headers.append("Content-Type: $mime\r\n")
-            headers.append("Content-Length: $length\r\n")
-            headers.append("Accept-Ranges: bytes\r\n")
-            headers.append("Connection: close\r\n")
-            headers.append("\r\n")
-            out.write(headers.toString().toByteArray(Charsets.UTF_8))
-            out.flush()
-            BufferedInputStream(FileInputStream(f)).use { input ->
-                var skipped = 0L
-                while (skipped < start) {
-                    skipped += input.skip(start - skipped)
-                }
-                val buf = ByteArray(64 * 1024)
-                var remaining = length
-                while (remaining > 0) {
-                    val read = input.read(buf, 0, minOf(buf.size.toLong(), remaining).toInt())
-                    if (read <= 0) break
-                    out.write(buf, 0, read)
-                    remaining -= read
-                }
-                out.flush()
+            when {
+                path.startsWith("/remote_playback/") ->
+                    handleReceiverCallback(out, method, path, headers, reader)
+                path.startsWith("/go/") ->
+                    handleRedirect(out, method, path)
+                path == "/media" ->
+                    handleMedia(out, method, headers["range"])
+                else ->
+                    writeStatus(out, 404, "Not Found", "text/plain", "Sin archivo".toByteArray())
             }
         } catch (e: Exception) {
             // Conexión cortada por la Roku o error de lectura: no pasa nada
         } finally {
             try { socket.close() } catch (e: Exception) { }
+        }
+    }
+
+    /** Reporte del canal receptor: POST /remote_playback/<sesión>/<evento>
+     *  con el estado en JSON. Se avisa al listener y se contesta 200. */
+    private fun handleReceiverCallback(
+        out: BufferedOutputStream,
+        method: String,
+        path: String,
+        headers: Map<String, String>,
+        reader: BufferedReader
+    ) {
+        if (method != "POST") {
+            writeStatus(out, 405, "Method Not Allowed", "text/plain", "Método no permitido".toByteArray())
+            return
+        }
+        val length = headers["content-length"]?.toIntOrNull() ?: 0
+        val body = if (length > 0) {
+            val buf = CharArray(length)
+            var read = 0
+            while (read < length) {
+                val n = reader.read(buf, read, length - read)
+                if (n <= 0) break
+                read += n
+            }
+            String(buf, 0, read)
+        } else {
+            ""
+        }
+        val segments = path.split("/").filter { it.isNotBlank() }
+        // /remote_playback/<sesión>/<evento>
+        val session = segments.getOrNull(1) ?: ""
+        val event = segments.getOrNull(2) ?: ""
+        try {
+            onReceiverEvent?.invoke(session, event, body)
+        } catch (e: Exception) {
+            // El reporte no debe tumbar el servidor
+        }
+        writeStatus(out, 200, "OK", "application/json", "{\"ok\":true}".toByteArray())
+    }
+
+    /** Redirección corta a una URL larga: GET /go/<sesión> responde 302
+     *  hacia la URL real guardada (la tele la sigue sola). */
+    private fun handleRedirect(out: BufferedOutputStream, method: String, path: String) {
+        if (method != "GET") {
+            writeStatus(out, 405, "Method Not Allowed", "text/plain", "Método no permitido".toByteArray())
+            return
+        }
+        val session = path.removePrefix("/go/").substringBefore('/')
+        val target = redirectUrls[session]
+        if (target == null) {
+            writeStatus(out, 404, "Not Found", "text/plain", "Sin archivo".toByteArray())
+            return
+        }
+        val headers = "HTTP/1.1 302 Found\r\nLocation: $target\r\n" +
+            "Content-Length: 0\r\nConnection: close\r\n\r\n"
+        out.write(headers.toByteArray(Charsets.UTF_8))
+        out.flush()
+    }
+
+    /** Sirve el archivo en /media (GET, con Range 206 para buscar). */
+    private fun handleMedia(
+        out: BufferedOutputStream,
+        method: String,
+        rangeHeader: String?
+    ) {
+        if (method != "GET") {
+            writeStatus(out, 405, "Method Not Allowed", "text/plain", "Método no permitido".toByteArray())
+            return
+        }
+        val f = file
+        if (f == null || !f.exists()) {
+            writeStatus(out, 404, "Not Found", "text/plain", "Sin archivo".toByteArray())
+            return
+        }
+        val mime = mimeFor(f.name)
+        val total = f.length()
+        val (start, end, partial) = parseRange(rangeHeader, total)
+        val length = (end - start + 1).coerceAtLeast(0)
+        val headers = StringBuilder()
+        if (partial) {
+            headers.append("HTTP/1.1 206 Partial Content\r\n")
+            headers.append("Content-Range: bytes $start-$end/$total\r\n")
+        } else {
+            headers.append("HTTP/1.1 200 OK\r\n")
+        }
+        headers.append("Content-Type: $mime\r\n")
+        headers.append("Content-Length: $length\r\n")
+        headers.append("Accept-Ranges: bytes\r\n")
+        headers.append("Connection: close\r\n")
+        headers.append("\r\n")
+        out.write(headers.toString().toByteArray(Charsets.UTF_8))
+        out.flush()
+        BufferedInputStream(FileInputStream(f)).use { input ->
+            var skipped = 0L
+            while (skipped < start) {
+                skipped += input.skip(start - skipped)
+            }
+            val buf = ByteArray(64 * 1024)
+            var remaining = length
+            while (remaining > 0) {
+                val read = input.read(buf, 0, minOf(buf.size.toLong(), remaining).toInt())
+                if (read <= 0) break
+                out.write(buf, 0, read)
+                remaining -= read
+            }
+            out.flush()
         }
     }
 

@@ -1,6 +1,7 @@
 package com.elanticristo616.roku
 
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
@@ -26,12 +27,16 @@ import java.io.FileOutputStream
  * «Mi Roku»), con el tema navideño de la app. Sin micrófono ni
  * audífonos: son exclusivos de la app oficial. Sin guía: ECP no
  * tiene tecla Guide.
+ * v1.1.0: los videos se transmiten por el canal receptor
+ * «Web Video Caster - Receiver» (gratis en la tienda Roku), con
+ * yt-dlp para sacar el video directo de cualquier enlace y un
+ * navegador con detección de video. El Reproductor de Roku (2213)
+ * ya no se usa para transmitir: Roku lo bloqueó en OS 11.5.
  */
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private var client: RokuClient? = null
-    private var server: MediaServer? = null
     private var connectedIp: String? = null
     private var connectedName: String? = null
 
@@ -75,6 +80,15 @@ class MainActivity : AppCompatActivity() {
         binding.btnYouTube.setOnClickListener { mandarYouTube() }
         binding.btnNetflix.setOnClickListener { mandarNetflix() }
 
+        // Transmitir cualquier video por el canal receptor
+        binding.btnCastLink.setOnClickListener { transmitirEnlace() }
+        binding.btnAbrirNavegador.setOnClickListener {
+            startActivity(Intent(this, BrowserActivity::class.java))
+        }
+        binding.btnCastPausa.setOnClickListener { comandoReceptor("pause") }
+        binding.btnCastSeguir.setOnClickListener { comandoReceptor("resume") }
+        binding.btnCastParar.setOnClickListener { comandoReceptor("stop") }
+
         binding.btnElegirVideo.setOnClickListener { pickVideo.launch("video/*") }
         binding.btnElegirFoto.setOnClickListener { pickPhoto.launch("image/*") }
         binding.btnUrlDirecta.setOnClickListener { mandarUrlDirecta() }
@@ -111,9 +125,25 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        CastSession.onReceiverEvent = { event, body ->
+            runOnUiThread {
+                CastHelper.describeReceiverEvent(event, body)?.let {
+                    binding.castStatusText.text = it
+                }
+            }
+        }
+    }
+
+    override fun onPause() {
+        if (CastSession.onReceiverEvent != null) CastSession.onReceiverEvent = null
+        super.onPause()
+    }
+
     override fun onDestroy() {
         super.onDestroy()
-        try { server?.stop() } catch (e: Exception) { }
+        CastSession.reset()
     }
 
     // ---------- Visibilidad según conexión ----------
@@ -140,6 +170,9 @@ class MainActivity : AppCompatActivity() {
         client = null
         connectedIp = null
         connectedName = null
+        CastSession.rokuIp = null
+        CastSession.rokuName = null
+        CastSession.receiver = null
         prefs.edit().remove("last_ip").remove("last_name").apply()
         binding.tvStatusText.text = "Sin tele conectada. Toca «Buscar teles»."
         actualizarVisibilidad()
@@ -196,6 +229,8 @@ class MainActivity : AppCompatActivity() {
                 client = c
                 connectedIp = ip
                 connectedName = realName
+                CastSession.rokuIp = ip
+                CastSession.rokuName = realName
                 prefs.edit().putString("last_ip", ip).putString("last_name", realName).apply()
                 binding.tvStatusText.text = "Conectada: $realName ($ip)"
                 actualizarVisibilidad()
@@ -284,6 +319,41 @@ class MainActivity : AppCompatActivity() {
                 val motivo = if (e.code == 404) "Netflix no está instalado en la tele."
                     else motivoDe(e)
                 mostrarErrorConexion(motivo)
+            }
+        }
+    }
+
+    // ---------- Transmitir cualquier video (canal receptor) ----------
+
+    /** Pega un enlace (YouTube, TikTok, X, Instagram, Facebook…),
+     *  saca el video directo con yt-dlp y lo transmite por el canal
+     *  receptor. El receptor debe estar instalado en la tele. */
+    private fun transmitirEnlace() {
+        val c = requiereConexion() ?: return
+        val link = binding.etCastLink.text.toString().trim()
+        if (link.isBlank()) {
+            Toast.makeText(this, "Pega un enlace primero.", Toast.LENGTH_SHORT).show()
+            return
+        }
+        binding.castStatusText.text = "Extrayendo video…"
+        lifecycleScope.launch {
+            val res = CastHelper.castLink(this@MainActivity, c, link) { msg ->
+                binding.castStatusText.text = msg
+            }
+            binding.castStatusText.text = res.message
+            if (!res.ok) {
+                Toast.makeText(this@MainActivity, res.message, Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    /** Pausa / reanuda / para lo que se está transmitiendo. */
+    private fun comandoReceptor(cmd: String) {
+        lifecycleScope.launch {
+            val res = CastHelper.receiverCommand(cmd)
+            binding.castStatusText.text = res.message
+            if (!res.ok) {
+                Toast.makeText(this@MainActivity, res.message, Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -380,23 +450,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun ensureServer(): MediaServer {
-        server?.let { return it }
-        var port = 8080
-        var lastError: Exception? = null
-        while (port <= 8090) {
-            try {
-                val srv = MediaServer(port)
-                srv.start()
-                server = srv
-                return srv
-            } catch (e: Exception) {
-                lastError = e
-                port++
-            }
-        }
-        throw lastError ?: IllegalStateException("No se pudo levantar el servidor local")
-    }
+    /** Servidor HTTP local compartido (lo usa también el navegador
+     *  para recibir el estado del canal receptor). */
+    private fun ensureServer(): MediaServer = CastSession.ensureServer()
 
     private fun copyToCache(uri: Uri): File {
         val name = contentResolver.query(uri, null, null, null, null)?.use { cursor ->

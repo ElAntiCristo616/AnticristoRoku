@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Navegador con detección de video: abre páginas, detecta los videos
+     que traen y los manda a la tele por el canal receptor. También pega
+     enlaces (YouTube, TikTok, X, Instagram, Facebook) y los transmite
+     con yt-dlp. Mismos colores navideños que el control. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_gradient">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <com.elanticristo616.roku.GarlandView
+            android:id="@+id/garlandView"
+            android:layout_width="match_parent"
+            android:layout_height="40dp" />
+
+        <!-- Barra: atrás | dirección | ir -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnVolver"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:text="←"
+                android:textSize="20sp"
+                app:backgroundTint="@color/pine_light"
+                app:cornerRadius="24dp" />
+
+            <EditText
+                android:id="@+id/etDireccion"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:background="@drawable/card_bg"
+                android:hint="Escribe una dirección o busca"
+                android:inputType="textUri"
+                android:padding="12dp"
+                android:textColor="@color/snow_white"
+                android:textColorHint="@color/sage" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnIr"
+                android:layout_width="56dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="8dp"
+                android:text="Ir"
+                android:textSize="16sp"
+                app:backgroundTint="@color/red_accent"
+                app:cornerRadius="12dp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvBrowserStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="16dp"
+            android:paddingTop="6dp"
+            android:paddingEnd="16dp"
+            android:text="Abre una página con video y te aviso para transmitirlo."
+            android:textColor="@color/sage"
+            android:textSize="14sp" />
+
+        <!-- Video detectado en la página -->
+        <LinearLayout
+            android:id="@+id/detectedCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="12dp"
+            android:background="@drawable/card_bg"
+            android:orientation="vertical"
+            android:padding="12dp"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🎬 Video detectado en esta página"
+                android:textColor="@color/gold"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvDetectedUrl"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:ellipsize="middle"
+                android:maxLines="2"
+                android:textColor="@color/snow_white"
+                android:textSize="13sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnTransmitirDetectado"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="📺 Transmitir este video a la tele"
+                app:backgroundTint="@color/red_accent" />
+        </LinearLayout>
+
+        <WebView
+            android:id="@+id/webView"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_marginTop="8dp"
+            android:layout_weight="1" />
+
+        <!-- Transmitir enlace con yt-dlp -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="12dp"
+            android:background="@drawable/card_bg"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Transmitir enlace"
+                android:textColor="@color/gold"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <EditText
+                android:id="@+id/etEnlace"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/card_bg"
+                android:hint="Pega el enlace: YouTube, TikTok, X, Instagram, Facebook…"
+                android:inputType="textUri"
+                android:padding="12dp"
+                android:textColor="@color/snow_white"
+                android:textColorHint="@color/sage" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnTransmitirEnlace"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="📺 Transmitir enlace a la tele"
+                app:backgroundTint="@color/red_accent" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnTransmitirPagina"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Transmitir esta página con yt-dlp"
+                app:backgroundTint="@color/pine_light" />
+
+            <TextView
+                android:id="@+id/tvCastStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:textColor="@color/sage"
+                android:textSize="14sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <com.elanticristo616.roku.SnowView
+        android:id="@+id/snowView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clickable="false"
+        android:focusable="false" />
+
+</FrameLayout>
